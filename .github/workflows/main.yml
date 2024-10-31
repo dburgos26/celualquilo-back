@@ -1,0 +1,50 @@
+name: Build and SonarCloud Analysis
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  sonarcloud:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out the repository code
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for SonarCloud analysis
+
+      # Set up Node.js (specify your version here, e.g., 16.x)
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      # Cache node_modules to speed up build
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node_modules-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node_modules
+
+      # Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Build the project (adjust if necessary for your NestJS setup)
+      - name: Build project
+        run: npm run build
+
+      # Run SonarCloud Scan
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}     # SonarCloud token for authentication
+      
